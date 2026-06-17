@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, CheckSquare, Layers, NotebookPen, Timer } from "lucide-react";
-import { useLocalStorage } from "@/lib/use-local-storage";
+import { useEffect, useState } from "react";
+import { ArrowRight, CheckSquare, Gamepad2, Layers, NotebookPen, Timer } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -8,8 +9,7 @@ export const Route = createFileRoute("/")({
       { title: "Lumen — Your study night sky" },
       {
         name: "description",
-        content:
-          "A calm dashboard for flashcards, notes, focus sessions, and study goals.",
+        content: "A calm dashboard for flashcards, notes, focus sessions, goals, and quiz games.",
       },
     ],
   }),
@@ -17,54 +17,40 @@ export const Route = createFileRoute("/")({
 });
 
 const cards = [
-  {
-    to: "/flashcards" as const,
-    label: "Flashcards",
-    desc: "Build decks. Flip and learn.",
-    icon: Layers,
-  },
-  {
-    to: "/notes" as const,
-    label: "Notes",
-    desc: "Capture ideas as they spark.",
-    icon: NotebookPen,
-  },
-  {
-    to: "/tasks" as const,
-    label: "Goals",
-    desc: "Tiny wins, every day.",
-    icon: CheckSquare,
-  },
-  {
-    to: "/pomodoro" as const,
-    label: "Focus",
-    desc: "25 minutes of quiet work.",
-    icon: Timer,
-  },
+  { to: "/games" as const, label: "Quiz Games", desc: "Test yourself, subject by subject.", icon: Gamepad2 },
+  { to: "/flashcards" as const, label: "Flashcards", desc: "Build decks. Flip and learn.", icon: Layers },
+  { to: "/notes" as const, label: "Notes", desc: "Capture ideas as they spark.", icon: NotebookPen },
+  { to: "/tasks" as const, label: "Goals", desc: "Tiny wins, every day.", icon: CheckSquare },
+  { to: "/pomodoro" as const, label: "Focus", desc: "25 minutes of quiet work.", icon: Timer },
 ];
 
 function Dashboard() {
-  const [name] = useLocalStorage<string>("lumen.name", "learner");
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 5 ? "Still awake" : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const { profile } = useAuth();
+  const name = profile?.display_name ?? "learner";
+
+  // Client-only greeting to avoid SSR/CSR mismatch
+  const [greeting, setGreeting] = useState("Hello");
+  useEffect(() => {
+    const h = new Date().getHours();
+    setGreeting(h < 5 ? "Still awake" : h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening");
+  }, []);
 
   return (
     <div className="pb-24 md:pb-0">
       <section className="mb-10">
-        <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">
+        <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground" suppressHydrationWarning>
           {greeting}
         </p>
         <h1 className="mt-2 font-display text-4xl font-semibold md:text-5xl">
-          What will you learn tonight, <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{name}</span>?
+          What will you learn tonight,{" "}
+          <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">{name}</span>?
         </h1>
         <p className="mt-3 max-w-xl text-muted-foreground">
-          A quiet workspace for thinkers of every age. Pick a tool and begin —
-          everything you make stays right here on your device.
+          Lumen — for high schoolers. Study, focus, and run a few quiz rounds.
         </p>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((c) => {
           const Icon = c.icon;
           return (
@@ -84,16 +70,6 @@ function Dashboard() {
             </Link>
           );
         })}
-      </section>
-
-      <section className="mt-10">
-        <div className="glass-panel p-6">
-          <h2 className="font-display text-lg font-semibold">A small ritual</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Open one deck. Write one note. Set a 25-minute timer. The night is
-            patient.
-          </p>
-        </div>
       </section>
     </div>
   );
