@@ -12,8 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as PomodoroRouteImport } from './routes/pomodoro'
 import { Route as NotesRouteImport } from './routes/notes'
+import { Route as GamesRouteImport } from './routes/games'
 import { Route as FlashcardsRouteImport } from './routes/flashcards'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GamesSubjectRouteImport } from './routes/games.$subject'
 
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
@@ -30,9 +33,19 @@ const NotesRoute = NotesRouteImport.update({
   path: '/notes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GamesRoute = GamesRouteImport.update({
+  id: '/games',
+  path: '/games',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FlashcardsRoute = FlashcardsRouteImport.update({
   id: '/flashcards',
   path: '/flashcards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -40,40 +53,81 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GamesSubjectRoute = GamesSubjectRouteImport.update({
+  id: '/$subject',
+  path: '/$subject',
+  getParentRoute: () => GamesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/flashcards': typeof FlashcardsRoute
+  '/games': typeof GamesRouteWithChildren
   '/notes': typeof NotesRoute
   '/pomodoro': typeof PomodoroRoute
   '/tasks': typeof TasksRoute
+  '/games/$subject': typeof GamesSubjectRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/flashcards': typeof FlashcardsRoute
+  '/games': typeof GamesRouteWithChildren
   '/notes': typeof NotesRoute
   '/pomodoro': typeof PomodoroRoute
   '/tasks': typeof TasksRoute
+  '/games/$subject': typeof GamesSubjectRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/flashcards': typeof FlashcardsRoute
+  '/games': typeof GamesRouteWithChildren
   '/notes': typeof NotesRoute
   '/pomodoro': typeof PomodoroRoute
   '/tasks': typeof TasksRoute
+  '/games/$subject': typeof GamesSubjectRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/flashcards' | '/notes' | '/pomodoro' | '/tasks'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/flashcards'
+    | '/games'
+    | '/notes'
+    | '/pomodoro'
+    | '/tasks'
+    | '/games/$subject'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/flashcards' | '/notes' | '/pomodoro' | '/tasks'
-  id: '__root__' | '/' | '/flashcards' | '/notes' | '/pomodoro' | '/tasks'
+  to:
+    | '/'
+    | '/auth'
+    | '/flashcards'
+    | '/games'
+    | '/notes'
+    | '/pomodoro'
+    | '/tasks'
+    | '/games/$subject'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/flashcards'
+    | '/games'
+    | '/notes'
+    | '/pomodoro'
+    | '/tasks'
+    | '/games/$subject'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
   FlashcardsRoute: typeof FlashcardsRoute
+  GamesRoute: typeof GamesRouteWithChildren
   NotesRoute: typeof NotesRoute
   PomodoroRoute: typeof PomodoroRoute
   TasksRoute: typeof TasksRoute
@@ -102,11 +156,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NotesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/games': {
+      id: '/games'
+      path: '/games'
+      fullPath: '/games'
+      preLoaderRoute: typeof GamesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/flashcards': {
       id: '/flashcards'
       path: '/flashcards'
       fullPath: '/flashcards'
       preLoaderRoute: typeof FlashcardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -116,12 +184,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/games/$subject': {
+      id: '/games/$subject'
+      path: '/$subject'
+      fullPath: '/games/$subject'
+      preLoaderRoute: typeof GamesSubjectRouteImport
+      parentRoute: typeof GamesRoute
+    }
   }
 }
 
+interface GamesRouteChildren {
+  GamesSubjectRoute: typeof GamesSubjectRoute
+}
+
+const GamesRouteChildren: GamesRouteChildren = {
+  GamesSubjectRoute: GamesSubjectRoute,
+}
+
+const GamesRouteWithChildren = GamesRoute._addFileChildren(GamesRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
   FlashcardsRoute: FlashcardsRoute,
+  GamesRoute: GamesRouteWithChildren,
   NotesRoute: NotesRoute,
   PomodoroRoute: PomodoroRoute,
   TasksRoute: TasksRoute,

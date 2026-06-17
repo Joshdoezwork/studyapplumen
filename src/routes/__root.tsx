@@ -12,18 +12,22 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
+  useNavigate,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppShell } from "../components/AppShell";
+import { AuthProvider, useAuth } from "../lib/auth-context";
 
 function NotFoundComponent() {
   return (
-    <AppShell>
+    <Gate>
       <div className="grid place-items-center py-32 text-center">
         <h1 className="font-display text-6xl font-semibold">404</h1>
         <p className="mt-2 text-muted-foreground">This page drifted off into the night sky.</p>
@@ -34,7 +38,7 @@ function NotFoundComponent() {
           Back to dashboard
         </Link>
       </div>
-    </AppShell>
+    </Gate>
   );
 }
 
@@ -46,7 +50,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   }, [error]);
 
   return (
-    <AppShell>
+    <Gate>
       <div className="grid place-items-center py-32 text-center">
         <h1 className="font-display text-3xl font-semibold">Something went wrong</h1>
         <p className="mt-2 max-w-md text-sm text-muted-foreground">
@@ -70,7 +74,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           </Link>
         </div>
       </div>
-    </AppShell>
+    </Gate>
   );
 }
 
@@ -83,14 +87,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "A calm study companion for learners of all ages: flashcards, notes, focus timer, and goals — wrapped in an aurora night sky.",
+          "A calm study companion for high schoolers: flashcards, notes, focus timer, goals, and quiz games.",
       },
       { name: "author", content: "Lumen" },
       { property: "og:title", content: "Lumen — Study under the stars" },
       {
         property: "og:description",
         content:
-          "Flashcards, notes, focus timer, and goals in one calm midnight workspace.",
+          "Flashcards, notes, focus timer, goals, and quiz games for high schoolers.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -122,9 +126,40 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AppShell>
-        <Outlet />
-      </AppShell>
+      <AuthProvider>
+        <Gate>
+          <Outlet />
+        </Gate>
+        <Toaster theme="dark" position="top-center" />
+      </AuthProvider>
     </QueryClientProvider>
   );
+}
+
+// Gate: redirect to /auth when no session/profile; show shell only when allowed.
+function Gate({ children }: { children: ReactNode }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { session, profile, loading } = useAuth();
+  const navigate = useNavigate();
+  const isAuthRoute = pathname === "/auth";
+
+  useEffect(() => {
+    if (loading) return;
+    if (!session && !isAuthRoute) {
+      navigate({ to: "/auth", replace: true });
+    } else if (session && !profile && !isAuthRoute) {
+      // signed in but no profile (e.g. OAuth) — finish onboarding
+      navigate({ to: "/auth", replace: true });
+    }
+  }, [loading, session, profile, isAuthRoute, navigate]);
+
+  if (isAuthRoute) return <>{children}</>;
+  if (loading || !session || !profile) {
+    return (
+      <div className="aurora-bg grid min-h-screen place-items-center">
+        <div className="text-sm text-muted-foreground">Loading…</div>
+      </div>
+    );
+  }
+  return <AppShell>{children}</AppShell>;
 }
