@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Check, RotateCcw, X, ListChecks, Pencil } from "lucide-react";
+import { ArrowLeft, Check, RotateCcw, X, ListChecks, Pencil, BookMarked } from "lucide-react";
 import { toast } from "sonner";
-import { getSubject, checkShortAnswer, type QuizMode } from "@/lib/quiz-data";
+import { getSubject, checkShortAnswer, type QuizMode, type Question, type Topic } from "@/lib/quiz-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 
@@ -31,6 +31,7 @@ function QuizPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  const [topic, setTopic] = useState<Topic | null>(null);
   const [mode, setMode] = useState<QuizMode | null>(null);
   const [seed, setSeed] = useState(0);
   const [idx, setIdx] = useState(0);
@@ -42,9 +43,9 @@ function QuizPage() {
   const [done, setDone] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const questions = useMemo(
-    () => (subject ? shuffle(subject.questions) : []),
-    [subject, seed, mode],
+  const questions = useMemo<Question[]>(
+    () => (topic ? shuffle(topic.questions) : []),
+    [topic, seed, mode],
   );
 
   if (!subject) {
@@ -56,8 +57,8 @@ function QuizPage() {
     );
   }
 
-  // Mode selection screen
-  if (mode === null) {
+  // 1) Topic selection
+  if (topic === null) {
     return (
       <div className="pb-24 md:pb-0">
         <div className="mx-auto max-w-2xl">
@@ -68,6 +69,39 @@ function QuizPage() {
             <div className="text-5xl">{subject.emoji}</div>
             <h1 className="mt-3 font-display text-3xl font-semibold">{subject.name}</h1>
             <p className="mt-2 text-muted-foreground">{subject.blurb}</p>
+            <p className="mt-4 text-sm uppercase tracking-[0.2em] text-muted-foreground">Pick a topic</p>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {subject.topics.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTopic(t)}
+                className="group flex flex-col items-start gap-2 rounded-xl border border-border bg-white/5 p-5 text-left transition hover:border-primary/50 hover:bg-white/10"
+              >
+                <BookMarked className="h-5 w-5 text-primary" />
+                <div className="font-display text-lg font-semibold">{t.name}</div>
+                <div className="text-sm text-muted-foreground">{t.blurb}</div>
+                <div className="mt-1 text-xs text-muted-foreground">{t.questions.length} questions</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 2) Mode selection
+  if (mode === null) {
+    return (
+      <div className="pb-24 md:pb-0">
+        <div className="mx-auto max-w-2xl">
+          <button onClick={() => setTopic(null)} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" /> Topics
+          </button>
+          <div className="glass-panel mt-4 p-8 text-center">
+            <div className="text-5xl">{subject.emoji}</div>
+            <h1 className="mt-3 font-display text-3xl font-semibold">{subject.name} · {topic.name}</h1>
+            <p className="mt-2 text-muted-foreground">{topic.blurb}</p>
             <p className="mt-4 text-sm uppercase tracking-[0.2em] text-muted-foreground">Choose a mode</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <button
@@ -127,7 +161,7 @@ function QuizPage() {
       if (user && !saved) {
         const { error } = await supabase.from("quiz_scores").insert({
           user_id: user.id,
-          subject: `${subject.id}:${mode}`,
+          subject: `${subject.id}:${topic.id}:${mode}`,
           score,
           total: questions.length,
         });
@@ -154,7 +188,7 @@ function QuizPage() {
           <div className="text-5xl">{subject.emoji}</div>
           <h1 className="mt-4 font-display text-3xl font-semibold">Quiz complete!</h1>
           <p className="mt-2 text-muted-foreground">
-            {subject.name} · {mode === "mc" ? "Multiple Choice" : "Short Answer"}
+            {subject.name} · {topic.name} · {mode === "mc" ? "Multiple Choice" : "Short Answer"}
           </p>
           <div className="my-6">
             <div className="font-display text-6xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -174,6 +208,12 @@ function QuizPage() {
               className="rounded-lg border border-border bg-white/5 px-4 py-2 text-sm font-medium hover:bg-white/10"
             >
               Switch mode
+            </button>
+            <button
+              onClick={() => { setTopic(null); setMode(null); restart(); }}
+              className="rounded-lg border border-border bg-white/5 px-4 py-2 text-sm font-medium hover:bg-white/10"
+            >
+              Switch topic
             </button>
             <button onClick={() => navigate({ to: "/games" })} className="rounded-lg border border-border bg-white/5 px-4 py-2 text-sm font-medium hover:bg-white/10">
               Choose subject
@@ -208,7 +248,7 @@ function QuizPage() {
 
         <div className="glass-panel p-6 md:p-8">
           <div className="mb-1 flex items-center justify-between gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-            <span className="flex items-center gap-2"><span className="text-base">{subject.emoji}</span> {subject.name}</span>
+            <span className="flex items-center gap-2"><span className="text-base">{subject.emoji}</span> {subject.name} · {topic.name}</span>
             <span className="flex items-center gap-1">
               {mode === "mc" ? <ListChecks className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
               {mode === "mc" ? "Multiple Choice" : "Short Answer"}

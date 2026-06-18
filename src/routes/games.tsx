@@ -41,7 +41,7 @@ function GamesIndex() {
             </div>
             <h3 className="mt-4 font-display text-xl font-semibold">{s.name}</h3>
             <p className="mt-1 text-sm text-muted-foreground">{s.blurb}</p>
-            <p className="mt-3 text-xs text-muted-foreground">{s.questions.length} questions</p>
+            <p className="mt-3 text-xs text-muted-foreground">{s.topics.length} topics · {s.topics.reduce((n, t) => n + t.questions.length, 0)} questions</p>
           </Link>
         ))}
       </section>

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { BookOpen } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { BookOpen, Eye, EyeOff, MailCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
@@ -22,35 +22,58 @@ function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [displayName, setDisplayName] = useState("");
+  const [username, setUsername] = useState("");
   const [grade, setGrade] = useState<number>(9);
   const [busy, setBusy] = useState(false);
+  const [verifyEmailSent, setVerifyEmailSent] = useState<string | null>(null);
 
-  // Redirect once signed in AND profile exists
   useEffect(() => {
     if (!loading && session && profile) {
       navigate({ to: "/" });
     }
   }, [loading, session, profile, navigate]);
 
-  // If signed in via OAuth but no profile yet, show grade onboarding
   const needsOnboarding = !!session && !profile;
+
+  const validUsername = (u: string) => /^[A-Za-z0-9_]{3,20}$/.test(u);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
       if (mode === "signup") {
+        if (!validUsername(username)) {
+          throw new Error("Username must be 3–20 chars: letters, numbers, underscores.");
+        }
+        const { data: existing } = await supabase
+          .from("profiles")
+          .select("id")
+          .ilike("username", username)
+          .maybeSingle();
+        if (existing) throw new Error("That username is taken.");
+
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin },
+          options: {
+            emailRedirectTo: window.location.origin + "/auth",
+            data: { username, display_name: displayName || username, grade },
+          },
         });
         if (error) throw error;
-        if (data.user) {
+
+        // If email confirmation is required, no session yet — show "check your email"
+        if (!data.session) {
+          setVerifyEmailSent(email);
+          toast.success("Verification email sent. Check your inbox.");
+        } else if (data.user) {
+          // Auto-confirmed: create profile immediately
           const { error: pErr } = await supabase.from("profiles").insert({
             id: data.user.id,
-            display_name: displayName || email.split("@")[0],
+            display_name: displayName || username,
+            username,
             grade,
           });
           if (pErr) throw pErr;
@@ -82,11 +105,23 @@ function AuthPage() {
   const handleOnboarding = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!session?.user) return;
+    if (!validUsername(username)) {
+      toast.error("Username must be 3–20 chars: letters, numbers, underscores.");
+      return;
+    }
     setBusy(true);
     try {
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("id")
+        .ilike("username", username)
+        .maybeSingle();
+      if (existing) throw new Error("That username is taken.");
+
       const { error } = await supabase.from("profiles").insert({
         id: session.user.id,
-        display_name: displayName || session.user.email?.split("@")[0] || "Learner",
+        display_name: displayName || username,
+        username,
         grade,
       });
       if (error) throw error;
@@ -117,12 +152,32 @@ function AuthPage() {
           </div>
 
           <div className="glass-panel p-6">
-            {needsOnboarding ? (
+            {verifyEmailSent ? (
+              <div className="space-y-4 text-center">
+                <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-primary/15">
+                  <MailCheck className="h-6 w-6 text-primary" />
+                </div>
+                <h2 className="font-display text-xl font-semibold">Verify your email</h2>
+                <p className="text-sm text-muted-foreground">
+                  We sent a confirmation link to <span className="text-foreground">{verifyEmailSent}</span>.
+                  Click it to activate your account, then come back here to sign in.
+                </p>
+                <button
+                  onClick={() => { setVerifyEmailSent(null); setMode("signin"); }}
+                  className={primaryBtn}
+                >
+                  Back to sign in
+                </button>
+              </div>
+            ) : needsOnboarding ? (
               <form onSubmit={handleOnboarding} className="space-y-4">
                 <h2 className="font-display text-xl font-semibold">One quick thing</h2>
                 <p className="text-sm text-muted-foreground">
-                  Lumen is for high schoolers only. Tell us your grade to continue.
+                  Lumen is for high schoolers only. Pick a username and grade to continue.
                 </p>
+                <Field label="Username">
+                  <input className={inputCls} value={username} onChange={(e) => setUsername(e.target.value)} placeholder="ada_lovelace" required />
+                </Field>
                 <Field label="Display name (optional)">
                   <input className={inputCls} value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="e.g. Ada" />
                 </Field>
@@ -159,7 +214,20 @@ function AuthPage() {
                 <form onSubmit={handleEmailAuth} className="space-y-3">
                   {mode === "signup" && (
                     <>
-                      <Field label="Display name">
+                      <Field label="Username">
+                        <input
+                          className={inputCls}
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          placeholder="ada_lovelace"
+                          required
+                          minLength={3}
+                          maxLength={20}
+                          pattern="[A-Za-z0-9_]{3,20}"
+                          title="3–20 characters: letters, numbers, underscores"
+                        />
+                      </Field>
+                      <Field label="Display name (optional)">
                         <input className={inputCls} value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Ada" />
                       </Field>
                       <Field label="Grade (9–12 only)">
@@ -175,11 +243,33 @@ function AuthPage() {
                     <input type="email" required className={inputCls} value={email} onChange={(e) => setEmail(e.target.value)} />
                   </Field>
                   <Field label="Password">
-                    <input type="password" required minLength={6} className={inputCls} value={password} onChange={(e) => setPassword(e.target.value)} />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        minLength={6}
+                        className={inputCls + " pr-10"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        className="absolute inset-y-0 right-0 grid w-10 place-items-center text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </Field>
                   <button disabled={busy} className={primaryBtn}>
                     {busy ? "…" : mode === "signin" ? "Sign in" : "Create account"}
                   </button>
+                  {mode === "signup" && (
+                    <p className="text-xs text-muted-foreground">
+                      We'll send a verification link to your email.
+                    </p>
+                  )}
                 </form>
 
                 <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
@@ -209,5 +299,3 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
     </label>
   );
 }
-
-import type { ReactNode } from "react";
