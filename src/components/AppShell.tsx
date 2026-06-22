@@ -1,15 +1,22 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { BookOpen, CheckSquare, Gamepad2, Layers, LogOut, NotebookPen, Sparkles, Timer } from "lucide-react";
+import {
+  Bot, BookOpen, CalendarDays, CheckSquare, Gamepad2, Layers, LineChart,
+  ListChecks, LogOut, NotebookPen, Sparkles, Timer,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { useAuth } from "@/lib/auth-context";
 
 const nav = [
   { to: "/", label: "Home", icon: Sparkles },
+  { to: "/planner", label: "Planner", icon: CalendarDays },
+  { to: "/tutor", label: "Tutor", icon: Bot },
+  { to: "/quiz-generator", label: "Quiz Gen", icon: ListChecks },
   { to: "/games", label: "Games", icon: Gamepad2 },
   { to: "/flashcards", label: "Cards", icon: Layers },
   { to: "/notes", label: "Notes", icon: NotebookPen },
   { to: "/tasks", label: "Goals", icon: CheckSquare },
   { to: "/pomodoro", label: "Focus", icon: Timer },
+  { to: "/analytics", label: "Stats", icon: LineChart },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -38,7 +45,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="font-display text-lg font-semibold tracking-tight">Lumen</span>
           </Link>
 
-          <nav className="glass-panel hidden items-center gap-1 px-2 py-1.5 md:flex">
+          <nav className="glass-panel hidden flex-wrap items-center gap-1 px-2 py-1.5 lg:flex">
             {nav.map((item) => {
               const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
               const Icon = item.icon;
@@ -46,11 +53,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Link
                   key={item.to}
                   to={item.to}
-                  className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors ${
                     active ? "bg-primary/20 text-foreground" : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-3.5 w-3.5" />
                   <span>{item.label}</span>
                 </Link>
               );
@@ -75,7 +82,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <main className="flex-1">{children}</main>
 
-        <nav className="glass-panel fixed inset-x-4 bottom-4 z-20 flex items-center justify-around px-1 py-2 md:hidden">
+        <nav className="glass-panel fixed inset-x-4 bottom-4 z-20 flex items-center gap-0.5 overflow-x-auto px-1 py-2 lg:hidden">
           {nav.map((item) => {
             const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
             const Icon = item.icon;
@@ -83,11 +90,11 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.to}
                 to={item.to}
-                className={`flex flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 text-[10px] ${
+                className={`flex shrink-0 flex-col items-center gap-0.5 rounded-lg px-2 py-1 text-[10px] ${
                   active ? "text-foreground" : "text-muted-foreground"
                 }`}
               >
-                <Icon className="h-5 w-5" />
+                <Icon className="h-4 w-4" />
                 {item.label}
               </Link>
             );
