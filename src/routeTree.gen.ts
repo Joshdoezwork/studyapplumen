@@ -9,25 +9,44 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TutorRouteImport } from './routes/tutor'
 import { Route as TasksRouteImport } from './routes/tasks'
+import { Route as QuizGeneratorRouteImport } from './routes/quiz-generator'
 import { Route as PomodoroRouteImport } from './routes/pomodoro'
+import { Route as PlannerRouteImport } from './routes/planner'
 import { Route as NotesRouteImport } from './routes/notes'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as FlashcardsRouteImport } from './routes/flashcards'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GamesIndexRouteImport } from './routes/games.index'
 import { Route as GamesSubjectRouteImport } from './routes/games.$subject'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 
+const TutorRoute = TutorRouteImport.update({
+  id: '/tutor',
+  path: '/tutor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QuizGeneratorRoute = QuizGeneratorRouteImport.update({
+  id: '/quiz-generator',
+  path: '/quiz-generator',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PomodoroRoute = PomodoroRouteImport.update({
   id: '/pomodoro',
   path: '/pomodoro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlannerRoute = PlannerRouteImport.update({
+  id: '/planner',
+  path: '/planner',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotesRoute = NotesRouteImport.update({
@@ -48,6 +67,11 @@ const FlashcardsRoute = FlashcardsRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnalyticsRoute = AnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -73,23 +97,31 @@ const ApiChatRoute = ApiChatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
   '/flashcards': typeof FlashcardsRoute
   '/games': typeof GamesRouteWithChildren
   '/notes': typeof NotesRoute
+  '/planner': typeof PlannerRoute
   '/pomodoro': typeof PomodoroRoute
+  '/quiz-generator': typeof QuizGeneratorRoute
   '/tasks': typeof TasksRoute
+  '/tutor': typeof TutorRoute
   '/api/chat': typeof ApiChatRoute
   '/games/$subject': typeof GamesSubjectRoute
   '/games/': typeof GamesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
   '/flashcards': typeof FlashcardsRoute
   '/notes': typeof NotesRoute
+  '/planner': typeof PlannerRoute
   '/pomodoro': typeof PomodoroRoute
+  '/quiz-generator': typeof QuizGeneratorRoute
   '/tasks': typeof TasksRoute
+  '/tutor': typeof TutorRoute
   '/api/chat': typeof ApiChatRoute
   '/games/$subject': typeof GamesSubjectRoute
   '/games': typeof GamesIndexRoute
@@ -97,12 +129,16 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
   '/flashcards': typeof FlashcardsRoute
   '/games': typeof GamesRouteWithChildren
   '/notes': typeof NotesRoute
+  '/planner': typeof PlannerRoute
   '/pomodoro': typeof PomodoroRoute
+  '/quiz-generator': typeof QuizGeneratorRoute
   '/tasks': typeof TasksRoute
+  '/tutor': typeof TutorRoute
   '/api/chat': typeof ApiChatRoute
   '/games/$subject': typeof GamesSubjectRoute
   '/games/': typeof GamesIndexRoute
@@ -111,35 +147,47 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/analytics'
     | '/auth'
     | '/flashcards'
     | '/games'
     | '/notes'
+    | '/planner'
     | '/pomodoro'
+    | '/quiz-generator'
     | '/tasks'
+    | '/tutor'
     | '/api/chat'
     | '/games/$subject'
     | '/games/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/analytics'
     | '/auth'
     | '/flashcards'
     | '/notes'
+    | '/planner'
     | '/pomodoro'
+    | '/quiz-generator'
     | '/tasks'
+    | '/tutor'
     | '/api/chat'
     | '/games/$subject'
     | '/games'
   id:
     | '__root__'
     | '/'
+    | '/analytics'
     | '/auth'
     | '/flashcards'
     | '/games'
     | '/notes'
+    | '/planner'
     | '/pomodoro'
+    | '/quiz-generator'
     | '/tasks'
+    | '/tutor'
     | '/api/chat'
     | '/games/$subject'
     | '/games/'
@@ -147,17 +195,28 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AnalyticsRoute: typeof AnalyticsRoute
   AuthRoute: typeof AuthRoute
   FlashcardsRoute: typeof FlashcardsRoute
   GamesRoute: typeof GamesRouteWithChildren
   NotesRoute: typeof NotesRoute
+  PlannerRoute: typeof PlannerRoute
   PomodoroRoute: typeof PomodoroRoute
+  QuizGeneratorRoute: typeof QuizGeneratorRoute
   TasksRoute: typeof TasksRoute
+  TutorRoute: typeof TutorRoute
   ApiChatRoute: typeof ApiChatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tutor': {
+      id: '/tutor'
+      path: '/tutor'
+      fullPath: '/tutor'
+      preLoaderRoute: typeof TutorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tasks': {
       id: '/tasks'
       path: '/tasks'
@@ -165,11 +224,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TasksRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/quiz-generator': {
+      id: '/quiz-generator'
+      path: '/quiz-generator'
+      fullPath: '/quiz-generator'
+      preLoaderRoute: typeof QuizGeneratorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pomodoro': {
       id: '/pomodoro'
       path: '/pomodoro'
       fullPath: '/pomodoro'
       preLoaderRoute: typeof PomodoroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/planner': {
+      id: '/planner'
+      path: '/planner'
+      fullPath: '/planner'
+      preLoaderRoute: typeof PlannerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/notes': {
@@ -198,6 +271,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/analytics': {
+      id: '/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -245,12 +325,16 @@ const GamesRouteWithChildren = GamesRoute._addFileChildren(GamesRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AnalyticsRoute: AnalyticsRoute,
   AuthRoute: AuthRoute,
   FlashcardsRoute: FlashcardsRoute,
   GamesRoute: GamesRouteWithChildren,
   NotesRoute: NotesRoute,
+  PlannerRoute: PlannerRoute,
   PomodoroRoute: PomodoroRoute,
+  QuizGeneratorRoute: QuizGeneratorRoute,
   TasksRoute: TasksRoute,
+  TutorRoute: TutorRoute,
   ApiChatRoute: ApiChatRoute,
 }
 export const routeTree = rootRouteImport
