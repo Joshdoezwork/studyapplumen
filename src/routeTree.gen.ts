@@ -16,6 +16,7 @@ import { Route as GamesRouteImport } from './routes/games'
 import { Route as FlashcardsRouteImport } from './routes/flashcards'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GamesIndexRouteImport } from './routes/games.index'
 import { Route as GamesSubjectRouteImport } from './routes/games.$subject'
 
 const TasksRoute = TasksRouteImport.update({
@@ -53,6 +54,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GamesIndexRoute = GamesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => GamesRoute,
+} as any)
 const GamesSubjectRoute = GamesSubjectRouteImport.update({
   id: '/$subject',
   path: '/$subject',
@@ -68,16 +74,17 @@ export interface FileRoutesByFullPath {
   '/pomodoro': typeof PomodoroRoute
   '/tasks': typeof TasksRoute
   '/games/$subject': typeof GamesSubjectRoute
+  '/games/': typeof GamesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/flashcards': typeof FlashcardsRoute
-  '/games': typeof GamesRouteWithChildren
   '/notes': typeof NotesRoute
   '/pomodoro': typeof PomodoroRoute
   '/tasks': typeof TasksRoute
   '/games/$subject': typeof GamesSubjectRoute
+  '/games': typeof GamesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +96,7 @@ export interface FileRoutesById {
   '/pomodoro': typeof PomodoroRoute
   '/tasks': typeof TasksRoute
   '/games/$subject': typeof GamesSubjectRoute
+  '/games/': typeof GamesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,16 +109,17 @@ export interface FileRouteTypes {
     | '/pomodoro'
     | '/tasks'
     | '/games/$subject'
+    | '/games/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/flashcards'
-    | '/games'
     | '/notes'
     | '/pomodoro'
     | '/tasks'
     | '/games/$subject'
+    | '/games'
   id:
     | '__root__'
     | '/'
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/pomodoro'
     | '/tasks'
     | '/games/$subject'
+    | '/games/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -184,6 +194,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/games/': {
+      id: '/games/'
+      path: '/'
+      fullPath: '/games/'
+      preLoaderRoute: typeof GamesIndexRouteImport
+      parentRoute: typeof GamesRoute
+    }
     '/games/$subject': {
       id: '/games/$subject'
       path: '/$subject'
@@ -196,10 +213,12 @@ declare module '@tanstack/react-router' {
 
 interface GamesRouteChildren {
   GamesSubjectRoute: typeof GamesSubjectRoute
+  GamesIndexRoute: typeof GamesIndexRoute
 }
 
 const GamesRouteChildren: GamesRouteChildren = {
   GamesSubjectRoute: GamesSubjectRoute,
+  GamesIndexRoute: GamesIndexRoute,
 }
 
 const GamesRouteWithChildren = GamesRoute._addFileChildren(GamesRouteChildren)
@@ -216,13 +235,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
