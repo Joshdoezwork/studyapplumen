@@ -78,7 +78,7 @@ Return strictly the JSON schema fields requested.`;
         subject: data.subject,
         topic: data.topic,
         grade: data.grade,
-        content_json: experimental_output as unknown as Record<string, unknown>,
+        content_json: experimental_output as never,
       }, { onConflict: "user_id,subject,topic,grade" });
 
     return experimental_output;

@@ -18,6 +18,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GamesIndexRouteImport } from './routes/games.index'
 import { Route as GamesSubjectRouteImport } from './routes/games.$subject'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
 
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
@@ -64,6 +65,11 @@ const GamesSubjectRoute = GamesSubjectRouteImport.update({
   path: '/$subject',
   getParentRoute: () => GamesRoute,
 } as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/notes': typeof NotesRoute
   '/pomodoro': typeof PomodoroRoute
   '/tasks': typeof TasksRoute
+  '/api/chat': typeof ApiChatRoute
   '/games/$subject': typeof GamesSubjectRoute
   '/games/': typeof GamesIndexRoute
 }
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/notes': typeof NotesRoute
   '/pomodoro': typeof PomodoroRoute
   '/tasks': typeof TasksRoute
+  '/api/chat': typeof ApiChatRoute
   '/games/$subject': typeof GamesSubjectRoute
   '/games': typeof GamesIndexRoute
 }
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/notes': typeof NotesRoute
   '/pomodoro': typeof PomodoroRoute
   '/tasks': typeof TasksRoute
+  '/api/chat': typeof ApiChatRoute
   '/games/$subject': typeof GamesSubjectRoute
   '/games/': typeof GamesIndexRoute
 }
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/notes'
     | '/pomodoro'
     | '/tasks'
+    | '/api/chat'
     | '/games/$subject'
     | '/games/'
   fileRoutesByTo: FileRoutesByTo
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/notes'
     | '/pomodoro'
     | '/tasks'
+    | '/api/chat'
     | '/games/$subject'
     | '/games'
   id:
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/notes'
     | '/pomodoro'
     | '/tasks'
+    | '/api/chat'
     | '/games/$subject'
     | '/games/'
   fileRoutesById: FileRoutesById
@@ -141,6 +153,7 @@ export interface RootRouteChildren {
   NotesRoute: typeof NotesRoute
   PomodoroRoute: typeof PomodoroRoute
   TasksRoute: typeof TasksRoute
+  ApiChatRoute: typeof ApiChatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -208,6 +221,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GamesSubjectRouteImport
       parentRoute: typeof GamesRoute
     }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -231,6 +251,7 @@ const rootRouteChildren: RootRouteChildren = {
   NotesRoute: NotesRoute,
   PomodoroRoute: PomodoroRoute,
   TasksRoute: TasksRoute,
+  ApiChatRoute: ApiChatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
