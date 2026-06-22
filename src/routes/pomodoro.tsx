@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Pause, Play, RotateCcw } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
 import { useLocalStorage } from "@/lib/use-local-storage";
+import { logStudySession } from "@/lib/study-sessions.functions";
 
 export const Route = createFileRoute("/pomodoro")({
   head: () => ({
@@ -22,6 +24,7 @@ function Pomodoro() {
   const [running, setRunning] = useState(false);
   const [sessions, setSessions] = useLocalStorage<number>("lumen.sessions", 0);
   const ref = useRef<ReturnType<typeof setInterval> | null>(null);
+  const log = useServerFn(logStudySession);
 
   useEffect(() => {
     if (!running) return;
@@ -30,7 +33,11 @@ function Pomodoro() {
         if (s <= 1) {
           clearInterval(ref.current!);
           setRunning(false);
-          if (mode === "focus") setSessions((n) => n + 1);
+          if (mode === "focus") {
+            setSessions((n) => n + 1);
+            // Persist study session to backend (powers streaks + analytics)
+            log({ data: { minutes: Math.round(DURATIONS.focus / 60), source: "pomodoro" } }).catch(() => {});
+          }
           const nextMode: Mode = mode === "focus" ? "break" : "focus";
           setMode(nextMode);
           return DURATIONS[nextMode];
@@ -41,7 +48,7 @@ function Pomodoro() {
     return () => {
       if (ref.current) clearInterval(ref.current);
     };
-  }, [running, mode, setSessions]);
+  }, [running, mode, setSessions, log]);
 
   const reset = () => {
     setRunning(false);
