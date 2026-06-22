@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      generated_lessons: {
+        Row: {
+          content_json: Json
+          created_at: string
+          grade: number
+          id: string
+          subject: string
+          topic: string
+          user_id: string
+        }
+        Insert: {
+          content_json: Json
+          created_at?: string
+          grade: number
+          id?: string
+          subject: string
+          topic: string
+          user_id: string
+        }
+        Update: {
+          content_json?: Json
+          created_at?: string
+          grade?: number
+          id?: string
+          subject?: string
+          topic?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      planner_events: {
+        Row: {
+          color: string | null
+          created_at: string
+          ends_at: string | null
+          id: string
+          notes: string | null
+          starts_at: string
+          subject: string | null
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          notes?: string | null
+          starts_at: string
+          subject?: string | null
+          title: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          notes?: string | null
+          starts_at?: string
+          subject?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -61,6 +133,78 @@ export type Database = {
           score?: number
           subject?: string
           total?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      study_goals: {
+        Row: {
+          created_at: string
+          daily_minutes_target: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          daily_minutes_target?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          daily_minutes_target?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      study_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          minutes: number
+          source: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          minutes: number
+          source?: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          minutes?: number
+          source?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tutor_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
           user_id?: string
         }
         Relationships: []
