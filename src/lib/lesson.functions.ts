@@ -33,7 +33,7 @@ const InputSchema = z.object({
 
 export const getOrGenerateLesson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => InputSchema.parse(input))
+  .validator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data, context }) => {
     if (!data.regenerate) {
       const { data: cached } = await context.supabase

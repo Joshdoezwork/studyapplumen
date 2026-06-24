@@ -1,18 +1,16 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
-  Bot, BookOpen, CalendarDays, CheckSquare, Gamepad2, Layers, LineChart,
-  ListChecks, LogOut, NotebookPen, Sparkles, Timer,
+  Bot, BookOpen, CalendarDays, CheckSquare, Gamepad2, LineChart,
+  LogOut, NotebookPen, Sparkles, Timer,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth-context";
 
 const nav = [
   { to: "/", label: "Home", icon: Sparkles },
   { to: "/planner", label: "Planner", icon: CalendarDays },
   { to: "/tutor", label: "Tutor", icon: Bot },
-  { to: "/quiz-generator", label: "Quiz Gen", icon: ListChecks },
   { to: "/games", label: "Games", icon: Gamepad2 },
-  { to: "/flashcards", label: "Cards", icon: Layers },
   { to: "/notes", label: "Notes", icon: NotebookPen },
   { to: "/tasks", label: "Goals", icon: CheckSquare },
   { to: "/pomodoro", label: "Focus", icon: Timer },
@@ -23,6 +21,18 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { signOut, profile } = useAuth();
   const navigate = useNavigate();
+  const [online, setOnline] = useState(true);
+
+  useEffect(() => {
+    const update = () => setOnline(typeof navigator !== "undefined" ? navigator.onLine : true);
+    update();
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();
@@ -65,6 +75,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="flex items-center gap-2">
+            <span className={`h-2.5 w-2.5 rounded-full ${online ? "bg-emerald-400" : "bg-rose-400"}`} title={online ? "Online" : "Offline"} />
             {profile && (
               <span className="hidden text-xs text-muted-foreground md:inline">
                 {profile.display_name ?? "Learner"} · G{profile.grade}

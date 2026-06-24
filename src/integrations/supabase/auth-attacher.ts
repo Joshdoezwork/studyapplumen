@@ -4,12 +4,85 @@ import { supabase } from './client'
 
 // Must be registered as a global `functionMiddleware` in `src/start.ts`; otherwise
 // the browser never attaches the bearer token to serverFn RPCs.
+function getSupabaseSessionFromStorage() {
+  if (typeof window === 'undefined' || !window.localStorage) return null;
+  const tokenKey = Object.keys(window.localStorage).find(
+    (key) => key.startsWith('sb-') && key.includes('auth'),
+  );
+  if (!tokenKey) return null;
+
+  try {
+    const raw = window.localStorage.getItem(tokenKey);
+    if (!raw) return null;
+    const payload = JSON.parse(raw);
+    return (
+      payload?.currentSession ||
+      payload?.session ||
+      payload ||
+      null
+    );
+  } catch {
+    return null;
+  }
+}
+
+function decodeJwtPayload(token: string) {
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+
+  try {
+    const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = payload.padEnd(Math.ceil(payload.length / 4) * 4, "=");
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+}
+
+function isAccessTokenExpired(token: string) {
+  const payload = decodeJwtPayload(token);
+  if (!payload || typeof payload.exp !== "number") return false;
+  const expiresAt = payload.exp * 1000;
+  return Date.now() >= expiresAt - 30_000;
+}
+
+async function tryRefreshSession(refreshToken?: string) {
+  if (typeof supabase.auth.refreshSession !== "function") return null;
+  try {
+    const args = refreshToken ? { refresh_token: refreshToken } : undefined;
+    const refreshed = await supabase.auth.refreshSession(args as any);
+    return refreshed.data.session?.access_token || null;
+  } catch {
+    return null;
+  }
+}
+
+async function getSupabaseAccessToken() {
+  const { data } = await supabase.auth.getSession();
+  const accessToken = data.session?.access_token;
+  if (accessToken && !isAccessTokenExpired(accessToken)) {
+    return accessToken;
+  }
+
+  const storedSession = getSupabaseSessionFromStorage();
+  const refreshToken =
+    storedSession?.refresh_token ||
+    storedSession?.currentSession?.refresh_token ||
+    storedSession?.session?.refresh_token;
+
+  if (typeof window !== 'undefined') {
+    const refreshedToken = await tryRefreshSession(refreshToken ?? undefined);
+    if (refreshedToken) return refreshedToken;
+  }
+
+  return null;
+}
+
 export const attachSupabaseAuth = createMiddleware({ type: 'function' }).client(
   async ({ next }) => {
-    const { data } = await supabase.auth.getSession()
-    const token = data.session?.access_token
+    const token = await getSupabaseAccessToken();
     return next({
       headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
+    });
   },
 )

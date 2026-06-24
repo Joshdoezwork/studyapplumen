@@ -89,6 +89,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "A calm study companion for high schoolers: flashcards, notes, focus timer, goals, and quiz games.",
       },
+      { name: "theme-color", content: "#0f172a" },
       { name: "author", content: "Lumen" },
       { property: "og:title", content: "Lumen — Study under the stars" },
       {
@@ -105,7 +106,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a51859e5-cb62-4156-bd9c-3e2c52f77d8d/id-preview-2615badb--63466659-be77-42a7-af6d-848c57bb57ab.lovable.app-1782130428759.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a51859e5-cb62-4156-bd9c-3e2c52f77d8d/id-preview-2615badb--63466659-be77-42a7-af6d-848c57bb57ab.lovable.app-1782130428759.png" },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,

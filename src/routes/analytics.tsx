@@ -82,6 +82,24 @@ function AnalyticsPage() {
   const strengths = bySubject.slice(0, 2);
   const weaknesses = [...bySubject].sort((a, b) => a.pct - b.pct).slice(0, 2);
 
+  const monthlyGrade = useMemo(() => {
+    if (scores.length === 0) return "N/A";
+    if (avgScore >= 0.92) return "A";
+    if (avgScore >= 0.82) return "B";
+    if (avgScore >= 0.72) return "C";
+    if (avgScore >= 0.62) return "D";
+    return "F";
+  }, [avgScore, scores.length]);
+
+  const gradeText = useMemo(() => {
+    if (scores.length === 0) return "Take quizzes to earn your grade.";
+    if (monthlyGrade === "A") return "Solid mastery — keep this pace.";
+    if (monthlyGrade === "B") return "Strong performance; review one weak topic.";
+    if (monthlyGrade === "C") return "Good effort; try a few more quizzes.";
+    if (monthlyGrade === "D") return "Focus on practice and revise your weakest subjects.";
+    return "Spend more time studying and revisit your quiz mistakes.";
+  }, [monthlyGrade, scores.length]);
+
   const askSuggestion = async () => {
     setLoadingSuggest(true);
     try {
@@ -111,10 +129,11 @@ function AnalyticsPage() {
         <h1 className="mt-1 font-display text-3xl font-semibold md:text-4xl">How you're doing</h1>
       </div>
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Stat label="This week" value={`${weekMinutes} min`} sub={`${Math.round(weekMinutes / 60 * 10) / 10}h`} />
         <Stat label="Last 30 days" value={`${monthMinutes} min`} sub={`${Math.round(monthMinutes / 60 * 10) / 10}h`} />
         <Stat label="Quiz accuracy" value={scores.length ? `${Math.round(avgScore * 100)}%` : "—"} sub={`${scores.length} quizzes`} />
+        <Stat label="Monthly grade" value={monthlyGrade} sub={gradeText} />
       </div>
 
       <div className="mb-6 grid gap-4 lg:grid-cols-2">

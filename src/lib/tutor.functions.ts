@@ -22,7 +22,7 @@ const SaveSchema = z.object({
 
 export const saveTutorMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => SaveSchema.parse(input))
+  .validator((input: unknown) => SaveSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("tutor_messages").insert({
       user_id: context.userId,

@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowRight, Bot, CalendarDays, CheckSquare, Flame, Gamepad2, Layers,
-  LineChart, ListChecks, NotebookPen, Target, Timer,
+  ArrowRight, Bot, CalendarDays, CheckSquare, Flame, Gamepad2,
+  LineChart, NotebookPen, Target, Timer,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
@@ -21,9 +21,7 @@ export const Route = createFileRoute("/")({
 const cards = [
   { to: "/planner" as const, label: "Planner", desc: "Schedule study, assignments, exams.", icon: CalendarDays },
   { to: "/tutor" as const, label: "AI Tutor", desc: "Ask, explain, summarize, quiz.", icon: Bot },
-  { to: "/quiz-generator" as const, label: "Quiz Generator", desc: "Turn notes into quizzes.", icon: ListChecks },
   { to: "/games" as const, label: "Quiz Games", desc: "Subject-by-subject practice.", icon: Gamepad2 },
-  { to: "/flashcards" as const, label: "Flashcards", desc: "Decks to flip and learn.", icon: Layers },
   { to: "/notes" as const, label: "Notes", desc: "Capture ideas fast.", icon: NotebookPen },
   { to: "/tasks" as const, label: "Goals", desc: "Tiny wins, every day.", icon: CheckSquare },
   { to: "/pomodoro" as const, label: "Focus", desc: "25-minute work blocks.", icon: Timer },
@@ -191,7 +189,6 @@ function Dashboard() {
           <h2 className="mb-3 font-display text-lg font-semibold">Jump in</h2>
           <div className="grid gap-2 sm:grid-cols-2">
             <Link to="/tutor" className="flex items-center justify-between rounded-lg border border-border bg-white/5 px-3 py-2 text-sm hover:bg-white/10">Ask the AI Tutor <Bot className="h-4 w-4" /></Link>
-            <Link to="/quiz-generator" className="flex items-center justify-between rounded-lg border border-border bg-white/5 px-3 py-2 text-sm hover:bg-white/10">Generate a quiz <ListChecks className="h-4 w-4" /></Link>
             <Link to="/pomodoro" className="flex items-center justify-between rounded-lg border border-border bg-white/5 px-3 py-2 text-sm hover:bg-white/10">Start a focus block <Timer className="h-4 w-4" /></Link>
             <Link to="/games" className="flex items-center justify-between rounded-lg border border-border bg-white/5 px-3 py-2 text-sm hover:bg-white/10">Play a quiz round <Gamepad2 className="h-4 w-4" /></Link>
           </div>

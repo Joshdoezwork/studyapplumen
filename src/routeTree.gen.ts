@@ -11,12 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TutorRouteImport } from './routes/tutor'
 import { Route as TasksRouteImport } from './routes/tasks'
-import { Route as QuizGeneratorRouteImport } from './routes/quiz-generator'
 import { Route as PomodoroRouteImport } from './routes/pomodoro'
 import { Route as PlannerRouteImport } from './routes/planner'
 import { Route as NotesRouteImport } from './routes/notes'
 import { Route as GamesRouteImport } from './routes/games'
-import { Route as FlashcardsRouteImport } from './routes/flashcards'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
@@ -32,11 +30,6 @@ const TutorRoute = TutorRouteImport.update({
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const QuizGeneratorRoute = QuizGeneratorRouteImport.update({
-  id: '/quiz-generator',
-  path: '/quiz-generator',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PomodoroRoute = PomodoroRouteImport.update({
@@ -57,11 +50,6 @@ const NotesRoute = NotesRouteImport.update({
 const GamesRoute = GamesRouteImport.update({
   id: '/games',
   path: '/games',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FlashcardsRoute = FlashcardsRouteImport.update({
-  id: '/flashcards',
-  path: '/flashcards',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -99,12 +87,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
-  '/flashcards': typeof FlashcardsRoute
   '/games': typeof GamesRouteWithChildren
   '/notes': typeof NotesRoute
   '/planner': typeof PlannerRoute
   '/pomodoro': typeof PomodoroRoute
-  '/quiz-generator': typeof QuizGeneratorRoute
   '/tasks': typeof TasksRoute
   '/tutor': typeof TutorRoute
   '/api/chat': typeof ApiChatRoute
@@ -115,11 +101,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
-  '/flashcards': typeof FlashcardsRoute
   '/notes': typeof NotesRoute
   '/planner': typeof PlannerRoute
   '/pomodoro': typeof PomodoroRoute
-  '/quiz-generator': typeof QuizGeneratorRoute
   '/tasks': typeof TasksRoute
   '/tutor': typeof TutorRoute
   '/api/chat': typeof ApiChatRoute
@@ -131,12 +115,10 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
-  '/flashcards': typeof FlashcardsRoute
   '/games': typeof GamesRouteWithChildren
   '/notes': typeof NotesRoute
   '/planner': typeof PlannerRoute
   '/pomodoro': typeof PomodoroRoute
-  '/quiz-generator': typeof QuizGeneratorRoute
   '/tasks': typeof TasksRoute
   '/tutor': typeof TutorRoute
   '/api/chat': typeof ApiChatRoute
@@ -149,12 +131,10 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/auth'
-    | '/flashcards'
     | '/games'
     | '/notes'
     | '/planner'
     | '/pomodoro'
-    | '/quiz-generator'
     | '/tasks'
     | '/tutor'
     | '/api/chat'
@@ -165,11 +145,9 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/auth'
-    | '/flashcards'
     | '/notes'
     | '/planner'
     | '/pomodoro'
-    | '/quiz-generator'
     | '/tasks'
     | '/tutor'
     | '/api/chat'
@@ -180,12 +158,10 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/auth'
-    | '/flashcards'
     | '/games'
     | '/notes'
     | '/planner'
     | '/pomodoro'
-    | '/quiz-generator'
     | '/tasks'
     | '/tutor'
     | '/api/chat'
@@ -197,12 +173,10 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalyticsRoute: typeof AnalyticsRoute
   AuthRoute: typeof AuthRoute
-  FlashcardsRoute: typeof FlashcardsRoute
   GamesRoute: typeof GamesRouteWithChildren
   NotesRoute: typeof NotesRoute
   PlannerRoute: typeof PlannerRoute
   PomodoroRoute: typeof PomodoroRoute
-  QuizGeneratorRoute: typeof QuizGeneratorRoute
   TasksRoute: typeof TasksRoute
   TutorRoute: typeof TutorRoute
   ApiChatRoute: typeof ApiChatRoute
@@ -222,13 +196,6 @@ declare module '@tanstack/react-router' {
       path: '/tasks'
       fullPath: '/tasks'
       preLoaderRoute: typeof TasksRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/quiz-generator': {
-      id: '/quiz-generator'
-      path: '/quiz-generator'
-      fullPath: '/quiz-generator'
-      preLoaderRoute: typeof QuizGeneratorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pomodoro': {
@@ -257,13 +224,6 @@ declare module '@tanstack/react-router' {
       path: '/games'
       fullPath: '/games'
       preLoaderRoute: typeof GamesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/flashcards': {
-      id: '/flashcards'
-      path: '/flashcards'
-      fullPath: '/flashcards'
-      preLoaderRoute: typeof FlashcardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -327,12 +287,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalyticsRoute: AnalyticsRoute,
   AuthRoute: AuthRoute,
-  FlashcardsRoute: FlashcardsRoute,
   GamesRoute: GamesRouteWithChildren,
   NotesRoute: NotesRoute,
   PlannerRoute: PlannerRoute,
   PomodoroRoute: PomodoroRoute,
-  QuizGeneratorRoute: QuizGeneratorRoute,
   TasksRoute: TasksRoute,
   TutorRoute: TutorRoute,
   ApiChatRoute: ApiChatRoute,

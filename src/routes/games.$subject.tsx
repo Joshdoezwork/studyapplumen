@@ -1,13 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { ArrowLeft, BookOpen, Check, GraduationCap, ListChecks, Loader2, Pencil, RotateCcw, Sparkles, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Check, ListChecks, Loader2, Pencil, Rocket, RotateCcw, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
-import ReactMarkdown from "react-markdown";
-import { useServerFn } from "@tanstack/react-start";
 import { getSubject, checkShortAnswer, type QuizMode, type Question, type Topic } from "@/lib/quiz-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { getOrGenerateLesson, type Lesson } from "@/lib/lesson.functions";
+import { useLocalStorage } from "@/lib/use-local-storage";
 
 export const Route = createFileRoute("/games/$subject")({
   head: ({ params }) => ({
@@ -19,8 +17,6 @@ export const Route = createFileRoute("/games/$subject")({
   component: SubjectPage,
 });
 
-type Tab = "learn" | "quiz";
-
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -30,10 +26,50 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+function getBadge(score: number, total: number) {
+  const pct = total ? (score / total) * 100 : 0;
+  if (pct === 100) return { title: "Legend", color: "text-emerald-400", subtitle: "Perfect run!" };
+  if (pct >= 90) return { title: "Champion", color: "text-sky-400", subtitle: "Elite performance" };
+  if (pct >= 75) return { title: "Ace", color: "text-amber-400", subtitle: "Strong streak" };
+  if (pct >= 50) return { title: "Rising Star", color: "text-violet-400", subtitle: "Keep going" };
+  return { title: "Apprentice", color: "text-stone-400", subtitle: "Practice makes progress" };
+}
+
+function getLevel(xp: number) {
+  const level = Math.floor(xp / 100) + 1;
+  const nextLevelXp = level * 100;
+  return { level, nextLevelXp, progress: xp % 100 };
+}
+
+const GAME_THEMES = {
+  classic: {
+    label: "Classic Arcade",
+    desc: "Steady streaks and XP for every correct answer.",
+    accent: "from-primary to-accent",
+    icon: ListChecks,
+    done: "Quiz complete!",
+  },
+  block: {
+    label: "Block Blast",
+    desc: "Destroy blocks with every right answer.",
+    accent: "from-emerald-400 to-cyan-400",
+    icon: Sparkles,
+    done: "Blocks cleared!",
+  },
+  rocket: {
+    label: "Rocket Rush",
+    desc: "Launch rockets through questions to earn fuel.",
+    accent: "from-fuchsia-500 to-rose-500",
+    icon: Rocket,
+    done: "Mission accomplished!",
+  },
+} as const;
+
+type GameTheme = keyof typeof GAME_THEMES;
+
 function SubjectPage() {
   const { subject: subjectId } = Route.useParams();
   const subject = getSubject(subjectId);
-  const [tab, setTab] = useState<Tab>("learn");
 
   if (!subject) {
     return (
@@ -54,154 +90,9 @@ function SubjectPage() {
           <div className="text-5xl">{subject.emoji}</div>
           <h1 className="mt-3 font-display text-3xl font-semibold">{subject.name}</h1>
           <p className="mt-2 text-muted-foreground">{subject.blurb}</p>
-          <div className="mt-4 inline-flex gap-1 rounded-lg bg-white/5 p-1">
-            <button onClick={() => setTab("learn")} className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm ${tab === "learn" ? "bg-primary/20 text-foreground" : "text-muted-foreground"}`}>
-              <BookOpen className="h-4 w-4" /> Learn
-            </button>
-            <button onClick={() => setTab("quiz")} className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm ${tab === "quiz" ? "bg-primary/20 text-foreground" : "text-muted-foreground"}`}>
-              <ListChecks className="h-4 w-4" /> Quiz
-            </button>
-          </div>
         </div>
 
-        {tab === "learn" ? <LearnTab subject={subject} /> : <QuizTab subject={subject} />}
-      </div>
-    </div>
-  );
-}
-
-function LearnTab({ subject }: { subject: ReturnType<typeof getSubject> & {} }) {
-  const { profile } = useAuth();
-  const generate = useServerFn(getOrGenerateLesson);
-  const [topic, setTopic] = useState<Topic | null>(null);
-  const [grade, setGrade] = useState<number>(profile?.grade ?? 9);
-  const [lesson, setLesson] = useState<Lesson | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const open = async (t: Topic, regenerate = false) => {
-    setTopic(t); setLoading(true); setLesson(null);
-    try {
-      const result = await generate({ data: { subject: subject.name, topic: t.name, grade, regenerate } });
-      setLesson(result);
-    } catch (e) {
-      toast.error((e as Error).message);
-      setTopic(null);
-    } finally { setLoading(false); }
-  };
-
-  if (topic) {
-    return (
-      <div className="mt-4">
-        <div className="mb-3 flex items-center justify-between">
-          <button onClick={() => { setTopic(null); setLesson(null); }} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" /> Topics
-          </button>
-          {lesson && (
-            <button onClick={() => open(topic, true)} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-white/5 px-3 py-1.5 text-xs hover:bg-white/10">
-              <RotateCcw className="h-3.5 w-3.5" /> Regenerate
-            </button>
-          )}
-        </div>
-        {loading ? (
-          <div className="glass-panel grid place-items-center py-24 text-center">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <p className="mt-3 text-sm text-muted-foreground">Composing your lesson…</p>
-          </div>
-        ) : lesson ? (
-          <article className="glass-panel space-y-6 p-6">
-            <header>
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">Grade {grade} · {subject.name}</div>
-              <h2 className="mt-1 font-display text-2xl font-semibold">{lesson.title}</h2>
-            </header>
-
-            <Section title="Objectives">
-              <ul className="list-disc space-y-1 pl-5 text-sm">
-                {lesson.objectives.map((o, i) => <li key={i}>{o}</li>)}
-              </ul>
-            </Section>
-
-            {lesson.vocabulary.length > 0 && (
-              <Section title="Vocabulary">
-                <dl className="grid gap-2 sm:grid-cols-2">
-                  {lesson.vocabulary.map((v, i) => (
-                    <div key={i} className="rounded-lg border border-border bg-white/5 p-3 text-sm">
-                      <dt className="font-medium">{v.term}</dt>
-                      <dd className="text-muted-foreground">{v.definition}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </Section>
-            )}
-
-            {lesson.sections.map((s, i) => (
-              <Section key={i} title={s.heading}>
-                <div className="prose prose-sm prose-invert max-w-none">
-                  <ReactMarkdown>{s.body}</ReactMarkdown>
-                </div>
-              </Section>
-            ))}
-
-            {lesson.worked_examples.length > 0 && (
-              <Section title="Worked examples">
-                <div className="space-y-3">
-                  {lesson.worked_examples.map((ex, i) => (
-                    <div key={i} className="rounded-lg border border-border bg-white/5 p-4 text-sm">
-                      <div className="font-medium">Problem: {ex.problem}</div>
-                      <div className="mt-2 text-muted-foreground prose prose-sm prose-invert max-w-none">
-                        <ReactMarkdown>{ex.solution}</ReactMarkdown>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Section>
-            )}
-
-            <Section title="Self-check">
-              <ol className="space-y-2 pl-5 text-sm list-decimal">
-                {lesson.self_check.map((c, i) => (
-                  <li key={i}>
-                    <div>{c.question}</div>
-                    <details className="mt-1">
-                      <summary className="cursor-pointer text-xs text-primary hover:underline">Show answer</summary>
-                      <div className="mt-1 text-muted-foreground">{c.answer}</div>
-                    </details>
-                  </li>
-                ))}
-              </ol>
-            </Section>
-
-            <p className="rounded-lg border border-border bg-white/5 p-3 text-xs text-muted-foreground">
-              AI-generated lesson in the style of mastery-based curricula. Not official Alpha Omega LIFEPAC® content.
-            </p>
-          </article>
-        ) : null}
-      </div>
-    );
-  }
-
-  return (
-    <div className="mt-4">
-      <div className="glass-panel mb-4 flex flex-wrap items-center justify-between gap-3 p-4">
-        <div className="flex items-center gap-2 text-sm">
-          <GraduationCap className="h-4 w-4 text-primary" />
-          <span>Grade</span>
-          <select value={grade} onChange={(e) => setGrade(Number(e.target.value))}
-            className="rounded-md border border-border bg-white/5 px-2 py-1 text-sm">
-            {[9, 10, 11, 12].map((g) => <option key={g} value={g}>{g}</option>)}
-          </select>
-        </div>
-        <p className="text-xs text-muted-foreground">Pick a topic to read an AI-generated lesson.</p>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        {subject.topics.map((t) => (
-          <button key={t.id} onClick={() => open(t)}
-            className="group flex flex-col items-start gap-2 rounded-xl border border-border bg-white/5 p-5 text-left transition hover:border-primary/50 hover:bg-white/10">
-            <Sparkles className="h-5 w-5 text-primary" />
-            <div className="font-display text-lg font-semibold">{t.name}</div>
-            <div className="text-sm text-muted-foreground">{t.blurb}</div>
-          </button>
-        ))}
+        <QuizTab subject={subject} />
       </div>
     </div>
   );
@@ -221,6 +112,7 @@ function QuizTab({ subject }: { subject: ReturnType<typeof getSubject> & {} }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [topic, setTopic] = useState<Topic | null>(null);
+  const [gameTheme, setGameTheme] = useState<GameTheme>("classic");
   const [mode, setMode] = useState<QuizMode | null>(null);
   const [seed, setSeed] = useState(0);
   const [idx, setIdx] = useState(0);
@@ -231,24 +123,52 @@ function QuizTab({ subject }: { subject: ReturnType<typeof getSubject> & {} }) {
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [combo, setCombo] = useState(0);
+  const [sessionXp, setSessionXp] = useState(0);
+  const [bonusText, setBonusText] = useState("Ready to earn XP.");
+  const [xp, setXp] = useLocalStorage<number>("games-xp", 0);
+  const [bestScores, setBestScores] = useLocalStorage<Record<string, number>>("games-best-scores", {});
 
   const questions = useMemo<Question[]>(() => (topic ? shuffle(topic.questions) : []), [topic, seed, mode]);
 
   if (topic === null) {
     return (
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        {subject.topics.map((t) => (
-          <button key={t.id} onClick={() => setTopic(t)}
-            className="group flex flex-col items-start gap-2 rounded-xl border border-border bg-white/5 p-5 text-left transition hover:border-primary/50 hover:bg-white/10">
-            <ListChecks className="h-5 w-5 text-primary" />
-            <div className="font-display text-lg font-semibold">{t.name}</div>
-            <div className="text-sm text-muted-foreground">{t.blurb}</div>
-            <div className="mt-1 text-xs text-muted-foreground">{t.questions.length} questions</div>
-          </button>
-        ))}
+      <div className="mt-4 space-y-4">
+        <div className="glass-panel p-4">
+          <div className="mb-3 text-sm font-medium uppercase tracking-[0.24em] text-muted-foreground">Choose your arcade mode</div>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {(Object.keys(GAME_THEMES) as GameTheme[]).map((key) => {
+              const theme = GAME_THEMES[key];
+              const Icon = theme.icon;
+              return (
+                <button key={key} type="button" onClick={() => setGameTheme(key)}
+                  className={`flex flex-col gap-2 rounded-2xl border px-4 py-4 text-left transition ${gameTheme === key ? "border-primary bg-primary/10" : "border-border bg-white/5 hover:border-primary/40 hover:bg-white/10"}`}>
+                  <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <Icon className="h-4 w-4" /> {theme.label}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{theme.desc}</p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          {subject.topics.map((t) => (
+            <button key={t.id} onClick={() => setTopic(t)}
+              className="group flex flex-col items-start gap-2 rounded-xl border border-border bg-white/5 p-5 text-left transition hover:border-primary/50 hover:bg-white/10">
+              <ListChecks className="h-5 w-5 text-primary" />
+              <div className="font-display text-lg font-semibold">{t.name}</div>
+              <div className="text-sm text-muted-foreground">{t.blurb}</div>
+              <div className="mt-1 text-xs text-muted-foreground">{t.questions.length} questions</div>
+            </button>
+          ))}
+        </div>
       </div>
     );
   }
+
+  const theme = GAME_THEMES[gameTheme];
 
   if (mode === null) {
     return (
@@ -257,8 +177,13 @@ function QuizTab({ subject }: { subject: ReturnType<typeof getSubject> & {} }) {
           <ArrowLeft className="h-4 w-4" /> Topics
         </button>
         <div className="glass-panel p-6 text-center">
+          <div className="mb-2 text-sm uppercase tracking-wider text-muted-foreground">{theme.label}</div>
           <h2 className="font-display text-xl font-semibold">{topic.name}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{topic.blurb}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{theme.desc}</p>
+          <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-left">
+            <div className="text-sm font-medium text-primary">Daily challenge</div>
+            <p className="mt-1 text-sm text-muted-foreground">Answer 3 questions in a row correctly for a growing combo bonus.</p>
+          </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <button onClick={() => setMode("mc")} className="flex flex-col items-start gap-2 rounded-xl border border-border bg-white/5 p-5 text-left hover:border-primary/50 hover:bg-white/10">
               <ListChecks className="h-6 w-6 text-primary" />
@@ -277,30 +202,77 @@ function QuizTab({ subject }: { subject: ReturnType<typeof getSubject> & {} }) {
   }
 
   const q = questions[idx];
+  const topicKey = topic ? `${subject.id}:${topic.id}:${mode}:${gameTheme}` : "";
+  const bestForTopic = bestScores[topicKey] ?? 0;
+  const rewardLabel = gameTheme === "block" ? "blocks" : gameTheme === "rocket" ? "fuel" : "XP";
+
+  useEffect(() => {
+    setBonusText(`Ready to earn ${rewardLabel}.`);
+  }, [rewardLabel]);
+
   const resetQuestion = () => { setPicked(null); setShortInput(""); setShortSubmitted(false); setShortCorrect(false); };
-  const choose = (i: number) => { if (picked !== null) return; setPicked(i); if (i === q.answer) setScore((s) => s + 1); };
+
+  const applyXp = (correct: boolean, baseXp: number) => {
+    if (!correct) {
+      setCombo(0);
+      setBonusText("Combo ended. Keep going!");
+      return;
+    }
+
+    const nextCombo = combo + 1;
+    setCombo(nextCombo);
+    const bonus = Math.min(10, (nextCombo - 1) * 2);
+    const earned = baseXp + bonus;
+    setSessionXp((xp) => xp + earned);
+    setXp((xp) => xp + earned);
+    setBonusText(`+${earned} XP${bonus ? ` (${bonus} combo bonus)` : ""}`);
+  };
+
+  const choose = (i: number) => {
+    if (picked !== null) return;
+    setPicked(i);
+    const correct = i === q.answer;
+    if (correct) setScore((s) => s + 1);
+    applyXp(correct, 10);
+  };
+
   const submitShort = () => {
     if (shortSubmitted || !shortInput.trim()) return;
     const ok = checkShortAnswer(q, shortInput);
-    setShortSubmitted(true); setShortCorrect(ok); if (ok) setScore((s) => s + 1);
+    setShortSubmitted(true);
+    setShortCorrect(ok);
+    if (ok) setScore((s) => s + 1);
+    applyXp(ok, 15);
   };
+
   const answered = mode === "mc" ? picked !== null : shortSubmitted;
 
   const next = async () => {
     if (idx + 1 < questions.length) { setIdx(idx + 1); resetQuestion(); }
     else {
       setDone(true);
+      const finalBest = Math.max(bestForTopic, score);
+      if (topicKey) setBestScores((prev) => ({ ...prev, [topicKey]: finalBest }));
+
       if (user && !saved) {
-        const { error } = await supabase.from("quiz_scores").insert({
-          user_id: user.id, subject: `${subject.id}:${topic.id}:${mode}`,
-          score, total: questions.length,
-        });
-        if (error) toast.error("Couldn't save score"); else setSaved(true);
+        try {
+          const { error } = await supabase.from("quiz_scores").insert({
+            user_id: user.id, subject: `${subject.id}:${topic.id}:${mode}`,
+            score, total: questions.length,
+          });
+          if (error) {
+            toast.error("Couldn't save score");
+          } else {
+            setSaved(true);
+          }
+        } catch (e) {
+          toast.error("Could not save score. Check your network.");
+        }
       }
     }
   };
 
-  const restart = () => { setIdx(0); resetQuestion(); setScore(0); setDone(false); setSaved(false); setSeed((s) => s + 1); };
+  const restart = () => { setIdx(0); resetQuestion(); setScore(0); setDone(false); setSaved(false); setCombo(0); setSessionXp(0); setSeed((s) => s + 1); };
 
   if (done) {
     const pct = Math.round((score / questions.length) * 100);
@@ -334,7 +306,22 @@ function QuizTab({ subject }: { subject: ReturnType<typeof getSubject> & {} }) {
       <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-white/5">
         <div className="h-full bg-gradient-to-r from-primary to-accent transition-all" style={{ width: `${((idx + (answered ? 1 : 0)) / questions.length) * 100}%` }} />
       </div>
-      <div className="glass-panel p-6">
+      <div className="mb-4 grid gap-3 sm:grid-cols-4 text-sm text-muted-foreground">
+        <div>XP gained: <span className="text-foreground">{sessionXp}</span></div>
+        <div>Combo: <span className="text-primary">{combo}</span></div>
+        <div>Best score: <span className="text-foreground">{bestForTopic}/{questions.length}</span></div>
+        <div>Level: <span className="text-foreground">{getLevel(xp).level}</span></div>
+      </div>
+      <div className="glass-panel rounded-2xl border border-border bg-white/5 p-4">
+        <div className="mb-2 flex items-center justify-between text-xs uppercase tracking-[0.24em] text-muted-foreground">
+          <span>Level {getLevel(xp).level} progress</span>
+          <span>{getLevel(xp).progress}/100 XP</span>
+        </div>
+        <div className="h-2 rounded-full bg-white/10">
+          <div className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all" style={{ width: `${getLevel(xp).progress}%` }} />
+        </div>
+      </div>
+      <div className="mt-4 glass-panel p-6">
         <div className="mb-1 text-xs uppercase tracking-wider text-muted-foreground">{topic.name} · {mode === "mc" ? "Multiple Choice" : "Short Answer"}</div>
         <h2 className="font-display text-2xl font-semibold">{q.q}</h2>
 
