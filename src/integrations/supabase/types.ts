@@ -44,6 +44,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notes: {
+        Row: {
+          attachments: Json
+          body: string
+          created_at: string
+          id: string
+          subject: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attachments?: Json
+          body?: string
+          created_at?: string
+          id?: string
+          subject?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attachments?: Json
+          body?: string
+          created_at?: string
+          id?: string
+          subject?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       planner_events: {
         Row: {
           color: string | null
