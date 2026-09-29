@@ -1,20 +1,20 @@
 import { createServerFn } from "@tanstack/react-start";
-import { generateText, Output } from "ai";
+import { streamText, Output } from "ai";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { getModel, providerOptions, friendlyAiError } from "@/lib/ai-gateway.server";
 
 const QuestionSchema = z.object({
   q: z.string(),
   type: z.enum(["mc", "tf", "short"]),
-  choices: z.array(z.string()).default([]),
+  choices: z.array(z.string()),
   answer: z.string(),
-  explanation: z.string().default(""),
+  explanation: z.string(),
 });
 
 const QuizSchema = z.object({
   title: z.string(),
-  questions: z.array(QuestionSchema).min(1).max(20),
+  questions: z.array(QuestionSchema),
 });
 
 export type GeneratedQuiz = z.infer<typeof QuizSchema>;
@@ -31,10 +31,7 @@ export const generateQuiz = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data }) => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
-    const gateway = createLovableAiGatewayProvider(key);
-    const model = gateway("google/gemini-3-flash-preview");
+    const model = getModel();
 
     const allowed = data.types.join(", ");
     const prompt = `Generate a study quiz from the source material below.
@@ -55,10 +52,10 @@ Source material:
 ${data.text}
 """`;
 
-    const { experimental_output } = await generateText({
-      model,
-      prompt,
-      experimental_output: Output.object({ schema: QuizSchema }),
-    });
+    let experimental_output: GeneratedQuiz;
+      try {
+        const result = streamText({ model, prompt, providerOptions, output: Output.object({ schema: QuizSchema }) });
+        experimental_output = await result.output;
+      } catch (e) { throw friendlyAiError(e); }
     return experimental_output;
   });

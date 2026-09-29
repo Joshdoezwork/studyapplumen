@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { createClient } from "@supabase/supabase-js";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { getModel, providerOptions } from "@/lib/ai-gateway.server";
 
 const SYSTEM_PROMPT = `You are Lumen, a warm, patient AI study tutor for high schoolers (grades 9–12).
 - Explain concepts simply with concrete examples and step-by-step reasoning.
@@ -33,19 +33,25 @@ export const Route = createFileRoute("/api/chat")({
           return new Response("Messages required", { status: 400 });
         }
 
-        const key = process.env.LOVABLE_API_KEY;
-        if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
-
-        const gateway = createLovableAiGatewayProvider(key);
-        const model = gateway("google/gemini-3-flash-preview");
+        if (!process.env.LOVABLE_API_KEY) return new Response("AI is not configured", { status: 500 });
+        const model = getModel();
 
         const result = streamText({
           model,
           system: SYSTEM_PROMPT,
+          providerOptions,
           messages: await convertToModelMessages(body.messages),
+          abortSignal: request.signal,
         });
 
-        return result.toUIMessageStreamResponse();
+        return result.toUIMessageStreamResponse({
+          onError: (e) => {
+            const err = e as { statusCode?: number; message?: string };
+            if (err?.statusCode === 429) return "AI is busy — try again in a moment.";
+            if (err?.statusCode === 402) return "AI credits are used up for this workspace.";
+            return err?.message || "AI error";
+          },
+        });
       },
     },
   },

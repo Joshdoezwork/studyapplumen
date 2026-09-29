@@ -73,24 +73,7 @@ function PlannerPage() {
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [user, cursor]);
 
-  // Reminder poller: any event in the next hour, once per session
-  useEffect(() => {
-    const notified = new Set<string>();
-    const check = () => {
-      const now = Date.now();
-      events.forEach((e) => {
-        const t = new Date(e.starts_at).getTime();
-        if (t > now && t - now <= 3600_000 && !notified.has(e.id)) {
-          notified.add(e.id);
-          const mins = Math.round((t - now) / 60_000);
-          toast(`⏰ ${e.title}`, { description: `in ${mins} min · ${e.subject ?? e.type}` });
-        }
-      });
-    };
-    check();
-    const id = setInterval(check, 60_000);
-    return () => clearInterval(id);
-  }, [events]);
+  const { perm, request: requestNotif } = useNotificationPermission();
 
   const monthGrid = useMemo(() => {
     const first = startOfMonth(cursor);
