@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { SUBJECTS } from "@/lib/quiz-data";
+import { useNotificationPermission } from "@/lib/reminders";
 
 export const Route = createFileRoute("/planner")({
   head: () => ({
