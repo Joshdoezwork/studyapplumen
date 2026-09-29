@@ -62,7 +62,7 @@ Style:
 
 Return strictly the JSON schema fields requested.`;
 
-    let experimental_output;
+    let experimental_output: Lesson;
       try {
         const result = streamText({ model, prompt, providerOptions, output: Output.object({ schema: LessonSchema }) });
         experimental_output = await result.output;

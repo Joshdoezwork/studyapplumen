@@ -52,7 +52,7 @@ Source material:
 ${data.text}
 """`;
 
-    let experimental_output;
+    let experimental_output: GeneratedQuiz;
       try {
         const result = streamText({ model, prompt, providerOptions, output: Output.object({ schema: QuizSchema }) });
         experimental_output = await result.output;
