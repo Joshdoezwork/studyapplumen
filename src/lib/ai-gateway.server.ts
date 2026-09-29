@@ -31,15 +31,15 @@ export function getModel() {
   return openai.responses(AI_MODEL);
 }
 
-export const providerOptions = {
+export const providerOptions: { openai: { forceReasoning: boolean; reasoningEffort: string; reasoningSummary: string; store: boolean; include: string[] } } = {
   openai: {
     forceReasoning: true,
-    reasoningEffort: "low",
-    reasoningSummary: "auto",
+    reasoningEffort: "low" as const,
+    reasoningSummary: "auto" as const,
     store: false,
     include: ["reasoning.encrypted_content"],
   },
-} as const;
+};
 
 export function friendlyAiError(e: unknown): Error {
   const msg = (e as { statusCode?: number; message?: string }) ?? {};

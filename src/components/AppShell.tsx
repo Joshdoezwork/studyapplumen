@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { useStudyReminders } from "@/lib/reminders";
 
 const nav = [
   { to: "/", label: "Home", icon: Sparkles },
@@ -21,7 +22,8 @@ const nav = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { signOut, profile } = useAuth();
+  const { signOut, profile, user } = useAuth();
+  useStudyReminders(user?.id);
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
