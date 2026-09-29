@@ -1,25 +1,25 @@
 import { createServerFn } from "@tanstack/react-start";
-import { generateText, Output } from "ai";
+import { streamText, Output } from "ai";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { getModel, providerOptions, friendlyAiError } from "@/lib/ai-gateway.server";
 
 const LessonSchema = z.object({
   title: z.string(),
-  objectives: z.array(z.string()).min(2).max(6),
-  vocabulary: z.array(z.object({ term: z.string(), definition: z.string() })).max(10),
+  objectives: z.array(z.string()),
+  vocabulary: z.array(z.object({ term: z.string(), definition: z.string() })),
   sections: z.array(z.object({
     heading: z.string(),
     body: z.string(),
-  })).min(2).max(6),
+  })),
   worked_examples: z.array(z.object({
     problem: z.string(),
     solution: z.string(),
-  })).max(4),
+  })),
   self_check: z.array(z.object({
     question: z.string(),
     answer: z.string(),
-  })).min(3).max(8),
+  })),
 });
 
 export type Lesson = z.infer<typeof LessonSchema>;
@@ -47,10 +47,7 @@ export const getOrGenerateLesson = createServerFn({ method: "POST" })
       if (cached?.content_json) return cached.content_json as Lesson;
     }
 
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
-    const gateway = createLovableAiGatewayProvider(key);
-    const model = gateway("google/gemini-3-flash-preview");
+    const model = getModel();
 
     const prompt = `Write a mastery-based, self-paced lesson for a Grade ${data.grade} student.
 Subject: ${data.subject}
@@ -65,11 +62,11 @@ Style:
 
 Return strictly the JSON schema fields requested.`;
 
-    const { experimental_output } = await generateText({
-      model,
-      prompt,
-      experimental_output: Output.object({ schema: LessonSchema }),
-    });
+    let experimental_output;
+      try {
+        const result = streamText({ model, prompt, providerOptions, output: Output.object({ schema: LessonSchema }) });
+        experimental_output = await result.output;
+      } catch (e) { throw friendlyAiError(e); }
 
     await context.supabase
       .from("generated_lessons")
